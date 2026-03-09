@@ -1,0 +1,85 @@
+# R-specific files
+.Rhistory
+.RData
+.Rprofile
+.Ruserdata
+*.Rproj
+.Rproj.user/
+
+# R package files
+*.tar.gz
+*.tar
+*.zip
+
+# Generated R files
+*.md5
+*.sha256
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.env
+
+# Node modules (if using npm packages)
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# System files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+temp/
+tmp/
+
+# Data files (optional - uncomment if you want to exclude)
+# *.csv
+# *.xlsx
+# *.xls
+
+# Large files
+data/raw/
+*.zip
+
+# Build outputs (keep generated dashboards for deployment)
+# html_dashboard/interactive_dashboard.html  # Uncomment if you want to regenerate
+
+# Local environment
+.Renv
+local_config.R
+
+# Logging
+*.log
+
+# Cache
+.cache/
+
+# IDE specific
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# OS
+.vscode-server/

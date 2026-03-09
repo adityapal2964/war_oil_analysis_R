@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>War Events vs Oil Prices - Advanced Analytics Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0f172a;
+            --secondary: #1e293b;
+            --accent: #00d9ff;
+            --accent-alt: #00f5ff;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border: #334155;
+            --text-light: #e2e8f0;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(15, 23, 42, 0.85);
+            --glass-blur: blur(10px);
+        }
+
+        body {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--text-light);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(0, 217, 255, 0.05) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container-fluid {
+            position: relative;
+            z-index: 1;
+            max-width: 1900px;
+            margin: 0 auto;
+            background: transparent;
+            padding: 0;
+        }
+
+        .dashboard-header {
+            background: var(--glass-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: var(--glass-blur);
+            box-shadow: 0 8px 32px rgba(0, 217, 255, 0.08);
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+        }
+
+        .dashboard-header p {
+            font-size: 1em;
+            color: var(--text-muted);
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+
+        .filter-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .filter-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .filter-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-item label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-light);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-item input,
+        .filter-item select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            background: rgba(30, 41, 59, 0.95);
+            color: var(--text-light);
+            border-radius: 6px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .filter-item input::placeholder,
+        .filter-item select::placeholder {
+            color: var(--text-muted);
+        }
+
+        .filter-item input:focus,
+        .filter-item select:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.25);
+            background: rgba(30, 41, 59, 0.98);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-filter {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-apply {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
+            color: var(--primary);
+            border: 1px solid var(--accent);
+        }
+
+        .btn-apply:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.4);
+        }
+
+        .btn-reset {
+            background: rgba(52, 82, 123, 0.25);
+            color: var(--text-light);
+            border: 1px solid var(--border);
+        }
+
+        .btn-reset:hover {
+            background: rgba(52, 82, 123, 0.4);
+            border-color: var(--accent);
+        }
+
+        .btn-play {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .btn-play:hover {
+            background: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-play.active {
+            background: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stats-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 22px;
+            backdrop-filter: var(--glass-blur);
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            border-left-color: var(--accent-alt);
+            box-shadow: 0 8px 24px rgba(0, 217, 255, 0.15);
+            transform: translateY(-3px);
+        }
+
+        .stats-card h4 {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .stats-card .value {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: var(--accent);
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stats-card .unit {
+            font-size: 0.8em;
+            color: var(--text-muted);
+        }
+
+        .key-findings {
+            background: var(--glass-bg);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--success);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .key-findings h3 {
+            color: var(--success);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .key-findings ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-findings li {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-light);
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .key-findings li:last-child {
+            border-bottom: none;
+        }
+
+        .key-findings strong {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: var(--glass-blur);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 24px rgba(0, 217, 255, 0.1);
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .chart-container:hover::before {
+            opacity: 1;
+        }
+
+        .chart-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .chart-subtitle {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .chart-wrapper {
+            width: 100%;
+            height: 420px;
+            display: block;
+            position: relative;
+        }
+
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 217, 255, 0.2);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .data-table-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: var(--glass-blur);
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+
+        .data-table-container h3 {
+            color: var(--accent);
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .data-table-container table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table-container thead th {
+            background: rgba(0, 217, 255, 0.1);
+            color: var(--accent);
+            padding: 12px;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table-container td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-light);
+        }
+
+        .data-table-container tr:hover {
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        .timeline-controls {
+            background: var(--glass-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .timeline-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timeline-display {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .timeline-year {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            min-width: 150px;
+        }
+
+        .timeline-slider {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .timeline-slider input {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .timeline-slider input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .timeline-slider input::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 25px rgba(0, 217, 255, 0.8);
+            transform: scale(1.2);
+        }
+
+        .timeline-slider input::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .timeline-slider input::-moz-range-thumb:hover {
+            box-shadow: 0 0 25px rgba(0, 217, 255, 0.8);
+            transform: scale(1.2);
+        }
+
+        .timeline-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .comparison-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .comparison-title {
+            font-size: 1.15em;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .comparison-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .comparison-group label {
+            grid-column: 1 / -1;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-group input {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            background: rgba(30, 41, 59, 0.95);
+            color: var(--text-light);
+            border-radius: 6px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .comparison-group input:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.25);
+            background: rgba(30, 41, 59, 0.98);
+        }
+
+        .comparison-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .comparison-metric {
+            background: rgba(0, 217, 255, 0.05);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .comparison-metric .label {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .comparison-metric .period-a {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+
+        .comparison-metric .period-b {
+            color: var(--warning);
+            font-weight: 700;
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+
+        .comparison-metric .diff {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .comparison-chart {
+            margin-top: 20px;
+        }
+
+        .comparison-chart h4 {
+            color: var(--accent);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.8em;
+            border-top: 1px solid var(--border);
+            margin-top: 30px;
+            letter-spacing: 0.5px;
+        }
+
+        .info-badge {
+            display: inline-block;
+            background: rgba(0, 217, 255, 0.15);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 10px;
+            border: 1px solid var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-left: 8px;
+            border: 1px solid var(--success);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 30px 20px;
+            }
+
+            .dashboard-header h1 {
+                font-size: 1.8em;
+            }
+
+            .filter-group {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .timeline-display {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .timeline-year {
+                min-width: auto;
+            }
+
+            .timeline-slider {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1>⚔️ GEOPOLITICAL CONFLICT & OIL MARKETS</h1>
+            <p>Advanced Data Analytics | Interactive Analysis Dashboard (1983-2026) + Advanced Features v2</p>
+        </div>
+
+        <!-- Key Findings First -->
+        <div class="key-findings">
+            <h3><i class="fas fa-star"></i> 💡 Key Insights</h3>
+            <ul>
+                <li><strong>Geopolitical Risk Premium:</strong> Oil prices during conflict years average <strong>$50.32/barrel</strong> vs <strong>$33.81</strong> during non-conflict years → <strong style="color: #ff6b6b;">+$16.51 (49% premium)</strong></li>
+                <li><strong>Correlation Pattern:</strong> Moderate positive correlation <strong>(0.2304)</strong> between armed conflict deaths and oil price movements</li>
+                <li><strong>High-Impact Periods:</strong> Peak volatility during <strong>2000-2008 Iraq War</strong> and <strong>2010-2020 regional conflicts</strong></li>
+                <li><strong>Historical Toll:</strong> <strong>11,789,619</strong> deaths from armed conflicts with measurable market impact</li>
+            </ul>
+        </div>
+
+        <!-- Filter Panel -->
+        <div class="filter-panel">
+            <div class="filter-title">
+                <i class="fas fa-sliders-h"></i>
+                INTERACTIVE FILTERS
+                <span class="info-badge" id="recordCount">44 records</span>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label for="yearFrom"><i class="fas fa-play"></i> Start Year</label>
+                    <input type="number" id="yearFrom" min="MIN_YEAR_PLACEHOLDER" max="MAX_YEAR_PLACEHOLDER" value="MIN_YEAR_PLACEHOLDER">
+                </div>
+                <div class="filter-item">
+                    <label for="yearTo"><i class="fas fa-stop"></i> End Year</label>
+                    <input type="number" id="yearTo" min="MIN_YEAR_PLACEHOLDER" max="MAX_YEAR_PLACEHOLDER" value="MAX_YEAR_PLACEHOLDER">
+                </div>
+                <div class="filter-item">
+                    <label for="conflictFilter"><i class="fas fa-filter"></i> Conflict Status</label>
+                    <select id="conflictFilter">
+                        <option value="all">▸ All Periods</option>
+                        <option value="conflict">⚔️ Conflict Years</option>
+                        <option value="non-conflict">☮️ Peaceful Years</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="minPrice"><i class="fas fa-dollar-sign"></i> Min Price</label>
+                    <input type="number" id="minPrice" min="0" step="0.1" value="0" placeholder="$0+">
+                </div>
+            </div>
+
+            <div class="filter-buttons">
+                <button class="btn-filter btn-apply" onclick="applyFilters()">
+                    <i class="fas fa-check-circle"></i> Apply Filters
+                </button>
+                <button class="btn-filter btn-reset" onclick="resetFilters()">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stats-card">
+                <h4><i class="fas fa-chart-line"></i> Avg Price</h4>
+                <div class="value" id="avgPrice">$0.00</div>
+                <div class="unit">per barrel (USD)</div>
+            </div>
+            <div class="stats-card">
+                <h4><i class="fas fa-skull"></i> Total Deaths</h4>
+                <div class="value" id="totalDeaths">0</div>
+                <div class="unit">from conflicts</div>
+            </div>
+            <div class="stats-card">
+                <h4><i class="fas fa-fire"></i> Conflict Years</h4>
+                <div class="value" id="conflictCount">0</div>
+                <div class="unit">in period</div>
+            </div>
+            <div class="stats-card">
+                <h4><i class="fas fa-database"></i> Records</h4>
+                <div class="value" id="recordsCount">0</div>
+                <div class="unit">after filter</div>
+            </div>
+        </div>
+
+        <!-- FEATURE 3: Animated Timeline Playback -->
+        <div class="timeline-controls">
+            <div class="timeline-title">
+                <i class="fas fa-play-circle"></i>
+                TIMELINE ANIMATION
+                <span class="feature-badge">Feature 3</span>
+            </div>
+            <div class="timeline-display">
+                <div class="timeline-year" id="timelineYear">1983</div>
+                <div class="timeline-slider">
+                    <input type="range" id="timelineSlider" min="MIN_YEAR_PLACEHOLDER" max="MAX_YEAR_PLACEHOLDER" value="MIN_YEAR_PLACEHOLDER" oninput="updateTimelineYear()">
+                </div>
+            </div>
+            <div class="timeline-buttons">
+                <button class="btn-filter btn-play" onclick="toggleTimeline()">
+                    <i class="fas fa-play"></i> Play Timeline
+                </button>
+                <button class="btn-filter btn-reset" onclick="pauseTimeline()">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button class="btn-filter btn-reset" onclick="resetTimeline()">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+                <span style="color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                    <i class="fas fa-info-circle"></i>
+                    Animates from 1983→2026, updating all charts in real-time
+                </span>
+            </div>
+        </div>
+
+        <!-- Primary Charts -->
+        <div class="charts-grid">
+            <!-- Chart 1: Oil Price Timeline with Annotations -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-oil-can"></i>
+                    Oil Price Timeline
+                    <span class="feature-badge">Feature 2</span>
+                </div>
+                <div class="chart-subtitle">Historical trends with key geopolitical events annotated</div>
+                <div class="loading-spinner" id="spinner1"><div class="spinner"></div></div>
+                <div id="chart1" class="chart-wrapper"></div>
+            </div>
+
+            <!-- Chart 2: Global Conflict Map -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-globe"></i>
+                    Global Conflict Map
+                    <span class="feature-badge">Feature 1</span>
+                </div>
+                <div class="chart-subtitle">Conflict locations, marker size = deaths, color = intensity</div>
+                <div class="loading-spinner" id="spinner2"><div class="spinner"></div></div>
+                <div id="chart2" class="chart-wrapper"></div>
+            </div>
+        </div>
+
+        <!-- Secondary Charts -->
+        <div class="charts-grid">
+            <!-- Chart 3: Oil Price Forecast -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-chart-area"></i>
+                    Price Forecast
+                    <span class="feature-badge">Feature 4</span>
+                </div>
+                <div class="chart-subtitle">5-year forward projection with confidence band</div>
+                <div class="loading-spinner" id="spinner3"><div class="spinner"></div></div>
+                <div id="chart3" class="chart-wrapper"></div>
+            </div>
+
+            <!-- Chart 4: Volatility Chart -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-wave-square"></i>
+                    Market Volatility
+                </div>
+                <div class="chart-subtitle">3-year rolling price volatility measurement</div>
+                <div class="loading-spinner" id="spinner4"><div class="spinner"></div></div>
+                <div id="chart4" class="chart-wrapper"></div>
+            </div>
+        </div>
+
+        <!-- Tertiary Charts -->
+        <div class="charts-grid">
+            <!-- Chart 5: Correlation Analysis -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-dot-circle"></i>
+                    Correlation Analysis
+                </div>
+                <div class="chart-subtitle">Deaths vs oil price relationship (log scale)</div>
+                <div class="loading-spinner" id="spinner5"><div class="spinner"></div></div>
+                <div id="chart5" class="chart-wrapper"></div>
+            </div>
+
+            <!-- Chart 6: Conflict Mortality -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-bomb"></i>
+                    Conflict Mortality
+                </div>
+                <div class="chart-subtitle">Annual deaths from armed conflicts</div>
+                <div class="loading-spinner" id="spinner6"><div class="spinner"></div></div>
+                <div id="chart6" class="chart-wrapper"></div>
+            </div>
+        </div>
+
+        <!-- FEATURE 5: Comparison Mode -->
+        <div class="comparison-panel">
+            <div class="comparison-title">
+                <i class="fas fa-balance-scale"></i>
+                PERIOD COMPARISON
+                <span class="feature-badge">Feature 5</span>
+            </div>
+
+            <div class="comparison-inputs">
+                <div class="comparison-group">
+                    <label>Period A</label>
+                    <input type="number" id="compPeriodA1" min="MIN_YEAR_PLACEHOLDER" max="MAX_YEAR_PLACEHOLDER" value="1990" placeholder="Start Year">
+                    <input type="number" id="compPeriodA2" min="MIN_YEAR_PLACEHOLDER" max="MAX_YEAR_PLACEHOLDER" value="2000" placeholder="End Year">
+                </div>
+                <div class="comparison-group">
+                    <label>Period B</label>
+                    <input type="number" id="compPeriodB1" min="MIN_YEAR_PLACEHOLDER" max="MAX_YEAR_PLACEHOLDER" value="2000" placeholder="Start Year">
+                    <input type="number" id="compPeriodB2" min="MIN_YEAR_PLACEHOLDER" max="MAX_YEAR_PLACEHOLDER" value="2010" placeholder="End Year">
+                </div>
+                <button class="btn-filter btn-apply" onclick="calculateComparison()" style="align-self: flex-end;">
+                    <i class="fas fa-sync-alt"></i> Compare
+                </button>
+            </div>
+
+            <div class="comparison-results" id="comparisonResults">
+                <div class="comparison-metric">
+                    <div class="label">Average Price (Period A)</div>
+                    <div class="period-a" id="compAvgPriceA">$0.00</div>
+                    <div class="label" style="margin-top: 10px; font-size: 0.7em;">Average Price (Period B)</div>
+                    <div class="period-b" id="compAvgPriceB">$0.00</div>
+                    <div class="diff" id="compAvgPriceDiff">Difference: $0.00</div>
+                </div>
+
+                <div class="comparison-metric">
+                    <div class="label">Total Deaths (Period A)</div>
+                    <div class="period-a" id="compDeathsA">0</div>
+                    <div class="label" style="margin-top: 10px; font-size: 0.7em;">Total Deaths (Period B)</div>
+                    <div class="period-b" id="compDeathsB">0</div>
+                    <div class="diff" id="compDeathsDiff">Difference: 0</div>
+                </div>
+
+                <div class="comparison-metric">
+                    <div class="label">Conflict Years (Period A)</div>
+                    <div class="period-a" id="compConflictA">0</div>
+                    <div class="label" style="margin-top: 10px; font-size: 0.7em;">Conflict Years (Period B)</div>
+                    <div class="period-b" id="compConflictB">0</div>
+                    <div class="diff" id="compConflictDiff">Difference: 0</div>
+                </div>
+
+                <div class="comparison-metric">
+                    <div class="label">Volatility (Period A)</div>
+                    <div class="period-a" id="compVolatilityA">$0.00</div>
+                    <div class="label" style="margin-top: 10px; font-size: 0.7em;">Volatility (Period B)</div>
+                    <div class="period-b" id="compVolatilityB">$0.00</div>
+                    <div class="diff" id="compVolatilityDiff">Difference: $0.00</div>
+                </div>
+            </div>
+
+            <div class="comparison-chart">
+                <h4>Side-by-Side Comparison Chart</h4>
+                <div class="loading-spinner" id="spinner7"><div class="spinner"></div></div>
+                <div id="comparisonChart" class="chart-wrapper"></div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="data-table-container">
+            <h3><i class="fas fa-table"></i> Filtered Dataset</h3>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Avg Price</th>
+                        <th>Volatility</th>
+                        <th>Conflicts</th>
+                        <th>Deaths</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Geopolitical Conflict & Oil Markets Analysis Dashboard</strong></p>
+            <p>Data Sources: Our World in Data | Armed Conflicts Database | Oil Price Index | Generated: March 2026</p>
+            <p style="margin-top: 10px;">✨ Advanced Features: Timeline Animation | Event Annotations | Global Map | Price Forecast | Period Comparison</p>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        const fullData = DATA_JSON_PLACEHOLDER;
+        let currentData = fullData;
+        let timelineData = fullData;
+        const minYearValue = MIN_YEAR_PLACEHOLDER;
+        const maxYearValue = MAX_YEAR_PLACEHOLDER;
+
+        // Timeline animation variables
+        let isPlaying = false;
+        let currentYear = minYearValue;
+        let timelineInterval = null;
+
+        // Major geopolitical events for annotations
+        const geopoliticalEvents = [
+            {year: 1990, event: "Gulf War", color: "#ef4444"},
+            {year: 2003, event: "Iraq War", color: "#ef4444"},
+            {year: 2011, event: "Arab Spring", color: "#f59e0b"},
+            {year: 2014, event: "ISIS Conflicts", color: "#ef4444"},
+            {year: 2022, event: "Russia-Ukraine", color: "#ef4444"}
+        ];
+
+        // Conflict locations (synthetic data based on historical conflicts)
+        const conflictLocations = [
+            {country: "Kuwait", year: 1990, lat: 29.31, lon: 47.48, deaths: 286233, conflicts: 1},
+            {country: "Afghanistan", year: 1989, lat: 33.94, lon: 67.71, deaths: 202038, conflicts: 1},
+            {country: "Iraq", year: 2003, lat: 33.31, lon: 44.36, deaths: 120717, conflicts: 1},
+            {country: "Syria", year: 2011, lat: 34.80, lon: 38.99, deaths: 100000, conflicts: 1},
+            {country: "Yemen", year: 2014, lat: 15.55, lon: 48.52, deaths: 100000, conflicts: 1},
+            {country: "Ukraine", year: 2022, lat: 48.38, lon: 31.17, deaths: 925842, conflicts: 1},
+            {country: "Somalia", year: 1992, lat: 5.01, lon: 46.20, deaths: 226701, conflicts: 1},
+            {country: "Sudan", year: 2003, lat: 12.86, lon: 30.22, deaths: 80000, conflicts: 1},
+            {country: "Libya", year: 2011, lat: 26.34, lon: 17.23, deaths: 50000, conflicts: 1},
+            {country: "Nigeria", year: 2009, lat: 9.08, lon: 8.68, deaths: 149808, conflicts: 1}
+        ];
+
+        document.addEventListener("DOMContentLoaded", function() {
+            updateAllCharts();
+        });
+
+        function applyFilters() {
+            const yearFrom = parseInt(document.getElementById("yearFrom").value);
+            const yearTo = parseInt(document.getElementById("yearTo").value);
+            const conflictFilter = document.getElementById("conflictFilter").value;
+            const minPrice = parseFloat(document.getElementById("minPrice").value);
+
+            if (yearFrom > yearTo) {
+                alert("Start year must be ≤ End year!");
+                return;
+            }
+
+            currentData = fullData.filter(row => {
+                const yearMatch = row.year >= yearFrom && row.year <= yearTo;
+                let conflictMatch = true;
+
+                if (conflictFilter === "conflict") {
+                    conflictMatch = row.conflict_period === 1;
+                } else if (conflictFilter === "non-conflict") {
+                    conflictMatch = row.conflict_period === 0;
+                }
+
+                const priceMatch = row.avg_price >= minPrice;
+                return yearMatch && conflictMatch && priceMatch;
+            });
+
+            document.getElementById("recordCount").textContent = currentData.length + " records";
+            updateStatistics();
+            updateAllCharts();
+        }
+
+        function resetFilters() {
+            document.getElementById("yearFrom").value = minYearValue;
+            document.getElementById("yearTo").value = maxYearValue;
+            document.getElementById("conflictFilter").value = "all";
+            document.getElementById("minPrice").value = "0";
+
+            currentData = fullData;
+            document.getElementById("recordCount").textContent = currentData.length + " records";
+            updateStatistics();
+            updateAllCharts();
+        }
+
+        function updateStatistics() {
+            if (currentData.length === 0) {
+                document.getElementById("avgPrice").textContent = "$0.00";
+                document.getElementById("totalDeaths").textContent = "0";
+                document.getElementById("conflictCount").textContent = "0";
+                document.getElementById("recordsCount").textContent = "0";
+                return;
+            }
+
+            const avgPrice = (currentData.reduce((sum, row) => sum + row.avg_price, 0) / currentData.length).toFixed(2);
+            const totalDeaths = currentData.reduce((sum, row) => sum + row.total_deaths, 0);
+            const conflictCount = currentData.filter(row => row.conflict_period === 1).length;
+
+            document.getElementById("avgPrice").textContent = "$" + avgPrice;
+            document.getElementById("totalDeaths").textContent = totalDeaths.toLocaleString();
+            document.getElementById("conflictCount").textContent = conflictCount;
+            document.getElementById("recordsCount").textContent = currentData.length;
+        }
+
+        function updateAllCharts() {
+            updateChart1();
+            updateChart2();
+            updateChart3();
+            updateChart4();
+            updateChart5();
+            updateChart6();
+            updateDataTable();
+        }
+
+        function showSpinner(id) {
+            const spinner = document.getElementById(id);
+            if (spinner) spinner.classList.add("active");
+        }
+
+        function hideSpinner(id) {
+            const spinner = document.getElementById(id);
+            if (spinner) spinner.classList.remove("active");
+        }
+
+        // ===== FEATURE 1: Global Conflict Map =====
+        function updateChart2() {
+            showSpinner("spinner2");
+            
+            const filteredLocations = conflictLocations.filter(loc => {
+                const dataPoint = currentData.find(d => d.year === loc.year);
+                return dataPoint && dataPoint.total_deaths > 0;
+            });
+
+            if (filteredLocations.length === 0) {
+                setTimeout(() => {
+                    Plotly.newPlot("chart2", [], {}, {responsive: true, displayModeBar: false});
+                    hideSpinner("spinner2");
+                }, 300);
+                return;
+            }
+
+            const locations = [{
+                type: 'scattergeo',
+                mode: 'markers',
+                lon: filteredLocations.map(l => l.lon),
+                lat: filteredLocations.map(l => l.lat),
+                text: filteredLocations.map(l => 
+                    `<b>${l.country}</b><br>Year: ${l.year}<br>Deaths: ${l.deaths.toLocaleString()}<br>Conflicts: ${l.conflicts}`
+                ),
+                marker: {
+                    size: filteredLocations.map(l => Math.sqrt(l.deaths) / 20),
+                    color: filteredLocations.map(l => l.deaths),
+                    colorscale: [[0, '#1e293b'], [0.5, '#f59e0b'], [1, '#ef4444']],
+                    showscale: true,
+                    colorbar: {
+                        title: "Deaths",
+                        thickness: 15,
+                        len: 0.7
+                    },
+                    line: {color: '#00d9ff', width: 1},
+                    opacity: 0.8
+                },
+                hovertemplate: '%{text}<extra></extra>'
+            }];
+
+            const layout = {
+                geo: {
+                    projection: {type: 'natural earth'},
+                    bgcolor: 'rgba(15, 23, 42, 0.8)',
+                    coastcolor: '#334155',
+                    countrycolor: '#334155',
+                    landcolor: '#0f172a',
+                    oceancolor: '#0f172a',
+                    showland: true,
+                    showocean: true
+                },
+                paper_bgcolor: 'rgba(15, 23, 42, 0)',
+                font: {family: "'Courier New', monospace", color: '#e2e8f0', size: 11},
+                margin: {b: 20, l: 20, r: 20, t: 20},
+                hovermode: 'closest',
+                height: 420
+            };
+
+            setTimeout(() => {
+                Plotly.newPlot("chart2", locations, layout, {responsive: true, displayModeBar: false});
+                hideSpinner("spinner2");
+            }, 300);
+        }
+
+        // ===== FEATURE 2: Oil Price Timeline with Event Annotations =====
+        function updateChart1() {
+            showSpinner("spinner1");
+            const sortedData = currentData.sort((a, b) => a.year - b.year);
+
+            const data = [{
+                x: sortedData.map(d => d.year),
+                y: sortedData.map(d => d.avg_price),
+                name: "Oil Price",
+                type: "scatter",
+                mode: "lines+markers",
+                line: {color: "#00d9ff", width: 3},
+                marker: {size: 6, color: "#00d9ff"},
+                fill: "tozeroy",
+                fillcolor: "rgba(0, 217, 255, 0.1)",
+                hovertemplate: "<b>%{x}</b><br>Price: $%{y:.2f}/bbl<extra></extra>"
+            }];
+
+            const annotations = geopoliticalEvents
+                .filter(evt => evt.year >= sortedData[0].year && evt.year <= sortedData[sortedData.length - 1].year)
+                .map(evt => {
+                    const dataPoint = sortedData.find(d => d.year === evt.year);
+                    return {
+                        x: evt.year,
+                        y: dataPoint ? dataPoint.avg_price : 50,
+                        text: evt.event,
+                        showarrow: true,
+                        arrowhead: 2,
+                        arrowsize: 1,
+                        arrowwidth: 2,
+                        arrowcolor: evt.color,
+                        ax: 0,
+                        ay: -50,
+                        bgcolor: evt.color,
+                        bordercolor: evt.color,
+                        font: {color: '#fff', size: 11},
+                        borderwidth: 1,
+                        borderpad: 8,
+                        opacity: 0.9
+                    };
+                });
+
+            const layout = {
+                xaxis: {title: "Year", color: "#94a3b8", gridcolor: "#334155"},
+                yaxis: {title: "Price (USD/barrel)", color: "#94a3b8", gridcolor: "#334155"},
+                hovermode: "x unified",
+                plot_bgcolor: "rgba(12, 14, 17, 0.5)",
+                paper_bgcolor: "rgba(15, 23, 42, 0)",
+                font: {family: "'Courier New', monospace", color: "#e2e8f0", size: 11},
+                margin: {b: 50, l: 60, r: 40, t: 100},
+                height: 420,
+                annotations: annotations
+            };
+
+            setTimeout(() => {
+                Plotly.newPlot("chart1", data, layout, {responsive: true, displayModeBar: false});
+                hideSpinner("spinner1");
+            }, 300);
+        }
+
+        // ===== FEATURE 3: Timeline Animation Playback =====
+        function updateTimelineYear() {
+            currentYear = parseInt(document.getElementById("timelineSlider").value);
+            document.getElementById("timelineYear").textContent = currentYear;
+            
+            timelineData = fullData.filter(d => d.year <= currentYear);
+            currentData = timelineData;
+            updateStatistics();
+            updateAllCharts();
+        }
+
+        function toggleTimeline() {
+            if (isPlaying) {
+                pauseTimeline();
+            } else {
+                isPlaying = true;
+                currentYear = minYearValue;
+                document.getElementById("timelineSlider").value = currentYear;
+                document.getElementById("timelineYear").textContent = currentYear;
+                document.querySelector(".btn-play").classList.add("active");
+
+                timelineInterval = setInterval(() => {
+                    if (currentYear >= maxYearValue) {
+                        pauseTimeline();
+                        return;
+                    }
+                    currentYear++;
+                    document.getElementById("timelineSlider").value = currentYear;
+                    document.getElementById("timelineYear").textContent = currentYear;
+                    
+                    timelineData = fullData.filter(d => d.year <= currentYear);
+                    currentData = timelineData;
+                    updateStatistics();
+                    updateAllCharts();
+                }, 300);
+            }
+        }
+
+        function pauseTimeline() {
+            isPlaying = false;
+            if (timelineInterval) clearInterval(timelineInterval);
+            document.querySelector(".btn-play").classList.remove("active");
+        }
+
+        function resetTimeline() {
+            pauseTimeline();
+            currentYear = minYearValue;
+            document.getElementById("timelineSlider").value = currentYear;
+            document.getElementById("timelineYear").textContent = currentYear;
+            currentData = fullData;
+            updateStatistics();
+            updateAllCharts();
+        }
+
+        // ===== FEATURE 4: Oil Price Forecast =====
+        function calculateSimpleForecas(data, periods = 5) {
+            if (data.length < 2) return {forecast: [], upper: [], lower: []};
+
+            const n = data.length;
+            const x = data.map((_, i) => i);
+            const y = data.map(d => d.avg_price);
+
+            const xMean = x.reduce((a, b) => a + b) / n;
+            const yMean = y.reduce((a, b) => a + b) / n;
+
+            const numerator = x.reduce((sum, xi, i) => sum + (xi - xMean) * (y[i] - yMean), 0);
+            const denominator = x.reduce((sum, xi) => sum + Math.pow(xi - xMean, 2), 0);
+            const slope = denominator === 0 ? 0 : numerator / denominator;
+            const intercept = yMean - slope * xMean;
+
+            const forecast = [];
+            const upper = [];
+            const lower = [];
+            const residuals = y.map((yi, i) => yi - (slope * x[i] + intercept));
+            const stdDev = Math.sqrt(residuals.reduce((sum, r) => sum + r * r, 0) / n);
+
+            for (let i = 1; i <= periods; i++) {
+                const pred = slope * (n + i - 1) + intercept;
+                const margin = 1.96 * stdDev;
+                forecast.push(Math.max(0, pred));
+                upper.push(Math.max(0, pred + margin));
+                lower.push(Math.max(0, pred - margin));
+            }
+
+            return {forecast, upper, lower};
+        }
+
+        function updateChart3() {
+            showSpinner("spinner3");
+            const sortedData = currentData.sort((a, b) => a.year - b.year);
+
+            if (sortedData.length < 2) {
+                setTimeout(() => {
+                    Plotly.newPlot("chart3", [], {}, {responsive: true, displayModeBar: false});
+                    hideSpinner("spinner3");
+                }, 300);
+                return;
+            }
+
+            const forecast = calculateSimpleForecas(sortedData);
+            const lastYear = sortedData[sortedData.length - 1].year;
+            const forecastYears = [lastYear + 1, lastYear + 2, lastYear + 3, lastYear + 4, lastYear + 5];
+
+            const data = [
+                {
+                    x: sortedData.map(d => d.year),
+                    y: sortedData.map(d => d.avg_price),
+                    name: "Historical",
+                    type: "scatter",
+                    mode: "lines+markers",
+                    line: {color: "#00d9ff", width: 3},
+                    marker: {size: 6, color: "#00d9ff"},
+                    fill: "tozeroy",
+                    fillcolor: "rgba(0, 217, 255, 0.1)",
+                    hovertemplate: "<b>%{x}</b><br>Price: $%{y:.2f}/bbl<extra></extra>"
+                },
+                {
+                    x: forecastYears,
+                    y: forecast.forecast,
+                    name: "Forecast",
+                    type: "scatter",
+                    mode: "lines+markers",
+                    line: {color: "#00d9ff", width: 3, dash: "dash"},
+                    marker: {size: 6, color: "#00d9ff", symbol: "diamond"},
+                    hovertemplate: "<b>%{x}</b><br>Forecast: $%{y:.2f}/bbl<extra></extra>"
+                },
+                {
+                    x: forecastYears,
+                    y: forecast.upper,
+                    name: "Upper Band",
+                    type: "scatter",
+                    mode: "lines",
+                    line: {color: "rgba(245, 158, 11, 0)", width: 0},
+                    fillcolor: "rgba(245, 158, 11, 0.2)",
+                    fill: "tozeroy",
+                    showlegend: false,
+                    hovertemplate: "<b>%{x}</b><br>Upper: $%{y:.2f}/bbl<extra></extra>"
+                },
+                {
+                    x: forecastYears,
+                    y: forecast.lower,
+                    name: "Lower Band",
+                    type: "scatter",
+                    mode: "lines",
+                    line: {color: "rgba(245, 158, 11, 0)", width: 0},
+                    fillcolor: "rgba(245, 158, 11, 0.2)",
+                    fill: "tozeroy",
+                    showlegend: false,
+                    hovertemplate: "<b>%{x}</b><br>Lower: $%{y:.2f}/bbl<extra></extra>"
+                }
+            ];
+
+            const layout = {
+                xaxis: {title: "Year", color: "#94a3b8", gridcolor: "#334155"},
+                yaxis: {title: "Price (USD/barrel)", color: "#94a3b8", gridcolor: "#334155"},
+                hovermode: "x unified",
+                plot_bgcolor: "rgba(12, 14, 17, 0.5)",
+                paper_bgcolor: "rgba(15, 23, 42, 0)",
+                font: {family: "'Courier New', monospace", color: "#e2e8f0", size: 11},
+                margin: {b: 50, l: 60, r: 40, t: 20},
+                height: 420
+            };
+
+            setTimeout(() => {
+                Plotly.newPlot("chart3", data, layout, {responsive: true, displayModeBar: false});
+                hideSpinner("spinner3");
+            }, 300);
+        }
+
+        function updateChart4() {
+            showSpinner("spinner4");
+            const sortedData = currentData.sort((a, b) => a.year - b.year);
+
+            const data = [{
+                x: sortedData.map(d => d.year),
+                y: sortedData.map(d => d.price_volatility || 0),
+                name: "Volatility",
+                type: "scatter",
+                mode: "lines",
+                fill: "tozeroy",
+                line: {color: "#f59e0b", width: 2},
+                fillcolor: "rgba(245, 158, 11, 0.2)",
+                hovertemplate: "<b>%{x}</b><br>Volatility: $%{y:.2f}<extra></extra>"
+            }];
+
+            const layout = {
+                xaxis: {title: "Year", color: "#94a3b8", gridcolor: "#334155"},
+                yaxis: {title: "Volatility (USD)", color: "#94a3b8", gridcolor: "#334155"},
+                hovermode: "x",
+                plot_bgcolor: "rgba(12, 14, 17, 0.5)",
+                paper_bgcolor: "rgba(15, 23, 42, 0)",
+                font: {family: "'Courier New', monospace", color: "#e2e8f0", size: 11},
+                margin: {b: 50, l: 60, r: 40, t: 20},
+                height: 420
+            };
+
+            setTimeout(() => {
+                Plotly.newPlot("chart4", data, layout, {responsive: true, displayModeBar: false});
+                hideSpinner("spinner4");
+            }, 300);
+        }
+
+        function updateChart5() {
+            showSpinner("spinner5");
+            const conflictData = currentData.filter(d => d.total_deaths > 0).sort((a, b) => a.year - b.year);
+
+            if (conflictData.length === 0) {
+                setTimeout(() => {
+                    Plotly.newPlot("chart5", [], {}, {responsive: true, displayModeBar: false});
+                    hideSpinner("spinner5");
+                }, 300);
+                return;
+            }
+
+            const data = [{
+                x: conflictData.map(d => d.total_deaths),
+                y: conflictData.map(d => d.avg_price),
+                text: conflictData.map(d => d.year),
+                name: "Conflicts",
+                type: "scatter",
+                mode: "markers",
+                marker: {
+                    color: "#00d9ff",
+                    size: conflictData.map(d => Math.min(d.n_conflicts * 2 + 5, 20)),
+                    opacity: 0.7,
+                    line: {color: "#00ffff", width: 1}
+                },
+                hovertemplate: "<b>Year %{text}</b><br>Deaths: %{x:,}<br>Price: $%{y:.2f}/bbl<extra></extra>"
+            }];
+
+            const layout = {
+                xaxis: {title: "Deaths (log scale)", type: "log", color: "#94a3b8", gridcolor: "#334155"},
+                yaxis: {title: "Price (USD/barrel)", color: "#94a3b8", gridcolor: "#334155"},
+                hovermode: "closest",
+                plot_bgcolor: "rgba(12, 14, 17, 0.5)",
+                paper_bgcolor: "rgba(15, 23, 42, 0)",
+                font: {family: "'Courier New', monospace", color: "#e2e8f0", size: 11},
+                margin: {b: 50, l: 60, r: 40, t: 20},
+                height: 420
+            };
+
+            setTimeout(() => {
+                Plotly.newPlot("chart5", data, layout, {responsive: true, displayModeBar: false});
+                hideSpinner("spinner5");
+            }, 300);
+        }
+
+        function updateChart6() {
+            showSpinner("spinner6");
+            const sortedData = currentData.sort((a, b) => a.year - b.year);
+
+            const data = [{
+                x: sortedData.map(d => d.year),
+                y: sortedData.map(d => d.total_deaths),
+                name: "Deaths",
+                type: "bar",
+                marker: {color: "rgba(239, 68, 68, 0.7)", line: {color: "#ef4444", width: 1}},
+                hovertemplate: "<b>%{x}</b><br>Deaths: %{y:,}<extra></extra>"
+            }];
+
+            const layout = {
+                xaxis: {title: "Year", color: "#94a3b8", gridcolor: "#334155"},
+                yaxis: {title: "Deaths", color: "#94a3b8", gridcolor: "#334155"},
+                hovermode: "x",
+                plot_bgcolor: "rgba(12, 14, 17, 0.5)",
+                paper_bgcolor: "rgba(15, 23, 42, 0)",
+                font: {family: "'Courier New', monospace", color: "#e2e8f0", size: 11},
+                margin: {b: 50, l: 60, r: 40, t: 20},
+                height: 420
+            };
+
+            setTimeout(() => {
+                Plotly.newPlot("chart6", data, layout, {responsive: true, displayModeBar: false});
+                hideSpinner("spinner6");
+            }, 300);
+        }
+
+        // ===== FEATURE 5: Period Comparison =====
+        function calculateComparison() {
+            const a1 = parseInt(document.getElementById("compPeriodA1").value);
+            const a2 = parseInt(document.getElementById("compPeriodA2").value);
+            const b1 = parseInt(document.getElementById("compPeriodB1").value);
+            const b2 = parseInt(document.getElementById("compPeriodB2").value);
+
+            if (a1 > a2 || b1 > b2) {
+                alert("Invalid date ranges!");
+                return;
+            }
+
+            const periodA = fullData.filter(d => d.year >= a1 && d.year <= a2);
+            const periodB = fullData.filter(d => d.year >= b1 && d.year <= b2);
+
+            if (periodA.length === 0 || periodB.length === 0) {
+                alert("No data for selected periods!");
+                return;
+            }
+
+            const calcMetrics = (data) => ({
+                avgPrice: data.reduce((sum, d) => sum + d.avg_price, 0) / data.length,
+                totalDeaths: data.reduce((sum, d) => sum + d.total_deaths, 0),
+                conflictYears: data.filter(d => d.conflict_period === 1).length,
+                avgVolatility: data.reduce((sum, d) => sum + (d.price_volatility || 0), 0) / data.length
+            });
+
+            const metricsA = calcMetrics(periodA);
+            const metricsB = calcMetrics(periodB);
+
+            document.getElementById("compAvgPriceA").textContent = "$" + metricsA.avgPrice.toFixed(2);
+            document.getElementById("compAvgPriceB").textContent = "$" + metricsB.avgPrice.toFixed(2);
+            document.getElementById("compAvgPriceDiff").textContent = 
+                `Difference: $${(metricsA.avgPrice - metricsB.avgPrice).toFixed(2)} (${((metricsA.avgPrice - metricsB.avgPrice) / metricsB.avgPrice * 100).toFixed(1)}%)`;
+
+            document.getElementById("compDeathsA").textContent = metricsA.totalDeaths.toLocaleString();
+            document.getElementById("compDeathsB").textContent = metricsB.totalDeaths.toLocaleString();
+            document.getElementById("compDeathsDiff").textContent = 
+                `Difference: ${(metricsA.totalDeaths - metricsB.totalDeaths).toLocaleString()}`;
+
+            document.getElementById("compConflictA").textContent = metricsA.conflictYears;
+            document.getElementById("compConflictB").textContent = metricsB.conflictYears;
+            document.getElementById("compConflictDiff").textContent = 
+                `Difference: ${metricsA.conflictYears - metricsB.conflictYears}`;
+
+            document.getElementById("compVolatilityA").textContent = "$" + metricsA.avgVolatility.toFixed(2);
+            document.getElementById("compVolatilityB").textContent = "$" + metricsB.avgVolatility.toFixed(2);
+            document.getElementById("compVolatilityDiff").textContent = 
+                `Difference: $${(metricsA.avgVolatility - metricsB.avgVolatility).toFixed(2)}`;
+
+            showSpinner("spinner7");
+            const chartData = [
+                {
+                    x: [`${a1}-${a2}`, `${b1}-${b2}`],
+                    y: [metricsA.avgPrice, metricsB.avgPrice],
+                    name: "Avg Price ($/bbl)",
+                    type: "bar",
+                    marker: {color: "#00d9ff"}
+                },
+                {
+                    x: [`${a1}-${a2}`, `${b1}-${b2}`],
+                    y: [metricsA.conflictYears * 10, metricsB.conflictYears * 10],
+                    name: "Conflict Years (×10)",
+                    type: "bar",
+                    marker: {color: "#ef4444"}
+                },
+                {
+                    x: [`${a1}-${a2}`, `${b1}-${b2}`],
+                    y: [metricsA.avgVolatility, metricsB.avgVolatility],
+                    name: "Avg Volatility ($/bbl)",
+                    type: "bar",
+                    marker: {color: "#f59e0b"}
+                }
+            ];
+
+            const layout = {
+                xaxis: {title: "Period", color: "#94a3b8", gridcolor: "#334155"},
+                yaxis: {title: "Value", color: "#94a3b8", gridcolor: "#334155"},
+                barmode: "group",
+                hovermode: "x unified",
+                plot_bgcolor: "rgba(12, 14, 17, 0.5)",
+                paper_bgcolor: "rgba(15, 23, 42, 0)",
+                font: {family: "'Courier New', monospace", color: "#e2e8f0", size: 11},
+                margin: {b: 50, l: 60, r: 40, t: 20},
+                height: 350
+            };
+
+            setTimeout(() => {
+                Plotly.newPlot("comparisonChart", chartData, layout, {responsive: true, displayModeBar: false});
+                hideSpinner("spinner7");
+            }, 300);
+        }
+
+        function updateDataTable() {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            const sortedData = currentData.sort((a, b) => a.year - b.year);
+
+            sortedData.forEach(row => {
+                const tr = document.createElement("tr");
+                const status = row.conflict_period === 1 ? "⚔️ CONFLICT" : "☮️ PEACEFUL";
+                tr.innerHTML = `
+                    <td>${row.year}</td>
+                    <td>$${row.avg_price.toFixed(2)}</td>
+                    <td>$${(row.price_volatility || 0).toFixed(2)}</td>
+                    <td>${row.n_conflicts}</td>
+                    <td>${row.total_deaths.toLocaleString()}</td>
+                    <td>${status}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
